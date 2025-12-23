@@ -1,0 +1,38 @@
+Collecting langchain==0.2.11
+  Using cached langchain-0.2.11-py3-none-any.whl.metadata (7.1 kB)
+Collecting langchain-core==0.2.24
+  Using cached langchain_core-0.2.24-py3-none-any.whl.metadata (6.2 kB)
+Collecting langchain-huggingface==0.3.1
+  Using cached langchain_huggingface-0.3.1-py3-none-any.whl.metadata (996 bytes)
+Collecting huggingface_hub
+  Using cached huggingface_hub-1.2.3-py3-none-any.whl.metadata (13 kB)
+Requirement already satisfied: PyYAML>=5.3 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain==0.2.11) (6.0.3)
+Requirement already satisfied: SQLAlchemy<3,>=1.4 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain==0.2.11) (2.0.44)
+Requirement already satisfied: aiohttp<4.0.0,>=3.8.3 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain==0.2.11) (3.13.2)
+Collecting langchain-text-splitters<0.3.0,>=0.2.0 (from langchain==0.2.11)
+  Using cached langchain_text_splitters-0.2.4-py3-none-any.whl.metadata (2.3 kB)
+Collecting langsmith<0.2.0,>=0.1.17 (from langchain==0.2.11)
+  Using cached langsmith-0.1.147-py3-none-any.whl.metadata (14 kB)
+Collecting numpy<2.0.0,>=1.26.0 (from langchain==0.2.11)
+  Using cached numpy-1.26.4-cp312-cp312-win_amd64.whl.metadata (61 kB)
+Requirement already satisfied: pydantic<3,>=1 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain==0.2.11) (2.12.5)
+Requirement already satisfied: requests<3,>=2 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain==0.2.11) (2.32.5)
+Collecting tenacity!=8.4.0,<9.0.0,>=8.1.0 (from langchain==0.2.11)
+  Using cached tenacity-8.5.0-py3-none-any.whl.metadata (1.2 kB)
+Requirement already satisfied: jsonpatch<2.0,>=1.33 in e:\medical_agentic_ai_project\venv\lib\site-packages (from langchain-core==0.2.24) (1.33)
+Collecting packaging<25,>=23.2 (from langchain-core==0.2.24)
+  Using cached packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
+INFO: pip is looking at multiple versions of langchain-huggingface to determine which version is compatible with other requirements. This could take a while.
+
+The conflict is caused by:
+    The user requested langchain-core==0.2.24
+    langchain 0.2.11 depends on langchain-core<0.3.0 and >=0.2.23
+    langchain-huggingface 0.3.1 depends on langchain-core<1.0.0 and >=0.3.70
+
+Additionally, some packages in these conflicts have no matching distributions available for your environment:
+    langchain-core
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip to attempt to solve the dependency conflict
+
