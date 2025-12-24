@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("🎓 NCERT Education Expert")
+st.title("🎓 Education Expert")
 
 # 2. Load Environment Variables
 load_dotenv()
@@ -166,7 +166,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # 8. Handle User Input
-if user_query := st.chat_input("Ask a question..."):
+if user_query := st.chat_input("Ask a question from 9th or 10th Grade Math/Science..."):
     
     # Display User Message
     with st.chat_message("user"):
