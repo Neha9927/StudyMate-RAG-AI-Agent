@@ -63,8 +63,9 @@ def get_math_solution(question, chat_history):
         api_key=GROQ_API_KEY
     )
 
-    # The "Teacher" System Prompt
-    system_prompt = """
+    # 1. The "Teacher" System Prompt
+    # Note: If you ever add curly braces {} inside this string, you must use double {{}} 
+    system_prompt_text = """
     You are an expert Math Tutor for Grade 9-10 students. 
     Your goal is to solve the problem analytically and explain every step clearly.
     
@@ -72,30 +73,38 @@ def get_math_solution(question, chat_history):
     1. **Structure:** Use 'Step 1', 'Step 2', etc., headings.
     2. **Math:** Use LaTeX formatting for all equations. Enclose them in double dollar signs ($$).
        - Example: $$x^2 + y^2 = r^2$$
-    3. **Explanation:** Briefly explain the theorem or logic used (e.g., "Pythagoras theorem").
-    4. **Final Answer:** State the final result clearly at the end.
+    3. **Explanation:** Briefly explain the theorem or logic used.
+    4. **Final Answer:** State the final result clearly at the end and final result can be more than one give answer based the question asked(Question a and question b).
     
     ### MEMORY:
-    - If the user asks a follow-up question (e.g., "How did you get step 2?"), refer to the previous conversation history provided.
+    - If the user asks a follow-up question, refer to the conversation history.
     """
 
-    # Build the conversation list
-    messages = [("system", system_prompt)]
-    
-    # Add history
-    for msg in chat_history:
-        role = "ai" if msg["role"] == "assistant" else "human"
-        messages.append((role, msg["content"]))
-    
-    # Add new question
-    messages.append(("human", question))
+    # 2. Create Prompt Template using Placeholder
+    # 'variable_name="chat_history"' tells LangChain to expect a list of messages, not a text string
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt_text),
+        MessagesPlaceholder(variable_name="chat_history"), 
+        ("human", "{input}"),
+    ])
 
-    # Create Prompt & Chain
-    prompt = ChatPromptTemplate.from_messages(messages)
     chain = prompt | llm_math
     
+    # 3. Convert Session State History to LangChain Message Objects
+    # This prevents the "{}" in LaTeX from being read as variables
+    history_buffer = []
+    for msg in chat_history:
+        if msg["role"] == "user":
+            history_buffer.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            history_buffer.append(AIMessage(content=msg["content"]))
+    
     try:
-        response = chain.invoke({})
+        # Pass the separated history list and input string
+        response = chain.invoke({
+            "chat_history": history_buffer,
+            "input": question
+        })
         return response.content
     except Exception as e:
         return f"Error: {str(e)}"
