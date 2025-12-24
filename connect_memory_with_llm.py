@@ -71,7 +71,7 @@ def get_math_solution(question):
     2. **Math:** Use LaTeX formatting for all equations. Enclose them in double dollar signs ($$).
        - Example: $$x^2 + y^2 = r^2$$
     3. **Explanation:** Briefly explain the theorem or logic used (e.g., "Pythagoras theorem").
-    4. **Final Answer:** State the final result clearly at the end and final result can be more than one give answer based the question asked.
+    4. **Final Answer:** State the final result clearly at the end and final result can be more than one give answer based the question asked(Question a and question b).
 
     ### RESTRICTIONS:
     - Do NOT write Python code.
