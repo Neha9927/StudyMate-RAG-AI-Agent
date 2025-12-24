@@ -7,7 +7,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 # 1. Page Configuration
 st.set_page_config(
@@ -54,7 +54,7 @@ def load_vectorstore():
 def get_math_solution(question, chat_history):
     """
     Uses Llama 3.3 to generate a structured, step-by-step mathematical explanation
-    while remembering previous context.
+    Safely handles LaTeX formatting using MessagesPlaceholder.
     """
     # Initialize the Smart Model
     llm_math = ChatGroq(
