@@ -1,5 +1,5 @@
 #1. load raw pdf
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+from langchain_community.document_loaders import PyMuPDFLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -13,7 +13,7 @@ data_Path="Data/"
 def load_pdf_files(data):
     loader=DirectoryLoader(data,
                    glob='*pdf',
-                   loader_cls=PyPDFLoader)
+                   loader_cls=PyMuPDFLoader)
     documents=loader.load()
     return documents
 documents=load_pdf_files(data=data_Path)
