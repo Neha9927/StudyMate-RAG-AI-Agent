@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_community.vectorstores import FAISS
+from langchain_pinecone import PineconeVectorStore  # <--- CHANGED THIS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -21,9 +21,14 @@ st.title("🎓 Education Expert")
 # 2. Load Environment Variables
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY") # <--- ADDED THIS
 
 if not GROQ_API_KEY:
     st.error("⚠️ GROQ_API_KEY is missing! Please check your .env file.")
+    st.stop()
+
+if not PINECONE_API_KEY:
+    st.error("⚠️ PINECONE_API_KEY is missing! Please check your .env file.")
     st.stop()
 
 # 3. Sidebar: Mode Selection
@@ -37,20 +42,25 @@ with st.sidebar:
     st.divider()
     st.info("Tip: The 'Math Tutor' uses Llama 3.3 to generate textbook-style solutions.")
 
-# 4. Cache Vector Store (Only needed for RAG)
+# 4. Connect to Pinecone Vector Store (UPDATED FOR CLOUD)
 @st.cache_resource
 def load_vectorstore():
-    DB_FAISS_PATH = "vectorstore/db_faiss"
-    if not os.path.exists(DB_FAISS_PATH):
-        return None
-    embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    # We no longer look for a local path like "vectorstore/db_faiss"
     try:
-        db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
-        return db
+        # 1. Define the Embedding Model (Must match what you uploaded!)
+        embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        
+        # 2. Connect to the Pinecone Cloud Index
+        vector_store = PineconeVectorStore.from_existing_index(
+            index_name="education-expert",
+            embedding=embedding_model
+        )
+        return vector_store
     except Exception as e:
+        st.error(f"Failed to connect to Pinecone: {e}")
         return None
 
-# 5. Define the Math Tutor Function (UPDATED FOR MEMORY)
+# 5. Define the Math Tutor Function
 def get_math_solution(question, chat_history):
     """
     Uses Llama 3.3 to generate a structured, step-by-step mathematical explanation
@@ -64,7 +74,6 @@ def get_math_solution(question, chat_history):
     )
 
     # 1. The "Teacher" System Prompt
-    # Note: If you ever add curly braces {} inside this string, you must use double {{}} 
     system_prompt_text = """
     You are an expert Math Tutor for Grade 9-10 students. 
     Your goal is to solve the problem analytically and explain every step clearly.
@@ -74,14 +83,13 @@ def get_math_solution(question, chat_history):
     2. **Math:** Use LaTeX formatting for all equations. Enclose them in double dollar signs ($$).
        - Example: $$x^2 + y^2 = r^2$$
     3. **Explanation:** Briefly explain the theorem or logic used.
-    4. **Final Answer:** State the final result clearly at the end and final result can be more than one give answer based the question asked(Question a and question b).
+    4. **Final Answer:** State the final result clearly at the end.
     
     ### MEMORY:
     - If the user asks a follow-up question, refer to the conversation history.
     """
 
     # 2. Create Prompt Template using Placeholder
-    # 'variable_name="chat_history"' tells LangChain to expect a list of messages, not a text string
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt_text),
         MessagesPlaceholder(variable_name="chat_history"), 
@@ -91,7 +99,6 @@ def get_math_solution(question, chat_history):
     chain = prompt | llm_math
     
     # 3. Convert Session State History to LangChain Message Objects
-    # This prevents the "{}" in LaTeX from being read as variables
     history_buffer = []
     for msg in chat_history:
         if msg["role"] == "user":
@@ -100,7 +107,6 @@ def get_math_solution(question, chat_history):
             history_buffer.append(AIMessage(content=msg["content"]))
     
     try:
-        # Pass the separated history list and input string
         response = chain.invoke({
             "chat_history": history_buffer,
             "input": question
@@ -109,7 +115,7 @@ def get_math_solution(question, chat_history):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# 6. Initialize RAG Chain (UPDATED FOR MEMORY)
+# 6. Initialize RAG Chain
 if mode == "📚 Concept Search (RAG)":
     vector_store = load_vectorstore()
     if vector_store:
@@ -120,7 +126,6 @@ if mode == "📚 Concept Search (RAG)":
         )
 
         # A. History-Aware Retriever
-        # (This rewrites the user's question to include context from history)
         retriever = vector_store.as_retriever(search_kwargs={"k": 3})
         
         contextualize_q_system_prompt = (
@@ -179,22 +184,19 @@ if user_query := st.chat_input("Ask a question from 9th or 10th Grade Math/Scien
         # --- MODE 1: MATH TUTOR (Structured Output) ---
         if mode == "📝 Step-by-Step Math Tutor":
             with st.spinner("📐 Solving step-by-step..."):
-                # Pass the full chat history!
                 answer = get_math_solution(user_query, st.session_state.messages)
-                
                 st.markdown(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 
         # --- MODE 2: RAG SEARCH ---
         else:
             if not load_vectorstore():
-                st.error("Vector DB not found. Please ingest documents.")
+                st.error("Vector DB connection failed.")
             else:
                 with st.spinner("📖 Searching documents..."):
                     try:
-                        # Convert session state to LangChain format for RAG
                         chat_history_lc = []
-                        for msg in st.session_state.messages[:-1]: # Skip the latest msg (it's in 'input')
+                        for msg in st.session_state.messages[:-1]:
                             if msg["role"] == "user":
                                 chat_history_lc.append(HumanMessage(content=msg["content"]))
                             else:
